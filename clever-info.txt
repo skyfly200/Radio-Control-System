@@ -1,0 +1,23 @@
+CLEVER 1.0: CommandLine EVEnt Renderer for WinAmp 2.x
+WinAmp must already be running in order to Clever to work.
+Usage: clever <command> <options-if-needed>
+Standard commands: prev | rewind | play | pause | stop | forward | next
+And more:
+  playpause            Start playing / pause song
+  load     <filename>  Add specified file to pl (mp3 or playlist)
+  loadnew  <filename>  Change to specified file (mp3 or playlist)
+  loadplay <filename>  Changes pl or file and starts to play it
+  volume <number>      Set volume (0-255)
+  volup / voldn        Increase / Decrease volume
+  clear                Clears current playlist
+  status               Displays status of Winamp
+  getplpos             Displays the playlist position starting from 1
+  swshuffle            Changes shuffle state. Displays new state
+  swrepeat             Changes repeat state. Displays new state
+  getshuffle           Displays shuffle state
+  getrepeat            Displays repeat state
+  position             Time elapsed on the current playing song
+  timeleft             Time left on the current playing song
+  songlength           Length ot the current loaded song
+
+(c) Jukkis 2001 - www.jukkis.net

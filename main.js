@@ -1,35 +1,58 @@
 const clever = require('./clever');
-const http = require('http');
 const url = require('url');
+const express = require('express');
+var app = express();
+var bodyParser = require('body-parser');
 
-// Create a server
-http.createServer( function (request, response) {
-   // Parse the request containing file name
-   var pathname = url.parse(request.url).pathname;
+// Create application/x-www-form-urlencoded parser
+var urlencodedParser = bodyParser.urlencoded({ extended: false })
 
-   if (pathname === "/relay") {
-     clever.loadplay("whr-relay1.m3u");
-     console.log("playing relay");
-     response.writeHead(200, {'Content-Type': 'text/html'});
-     // Write the content of the file to response body
-     response.write("playing relay");
-   }else if (pathname === "/all") {
-     clever.loadplay("All.m3u");
-     console.log("playing all");
-     response.writeHead(200, {'Content-Type': 'text/html'});
-     // Write the content of the file to response body
-     response.write("playing all");
-   }else if (pathname === "/") {
-     response.writeHead(200, {'Content-Type': 'text/html'});
-     // Write the content of the file to response body
-     response.write("root");
-   }else{
-     // HTTP Status: 404 : NOT FOUND
-     // Content Type: text/plain
-     response.writeHead(404, {'Content-Type': 'text/html'});
-   }
-    // Send the response body
-    response.end();
-}).listen(8081);
+// set public directory
+app.use(express.static('public'));
 
-console.log('Server running at http://127.0.0.1:8081/');
+// <<<- Setup Routing ->>>
+app.get('/', function (req, res) {
+  res.send('Put Radio Control System Api Docs Here!');
+})
+
+app.get('/all', function (req, res) {
+  var output = clever.cleverCmd("loadplay", "All.m3u");
+  console.log( output );
+  res.send( output );
+})
+
+app.get('/relay', function (req, res) {
+  var output = clever.cleverCmd("loadplay", "whr-relay1.m3u");
+  console.log( output );
+  res.send( output );
+})
+
+app.get('/formG', function (req, res) {
+  res.sendFile( __dirname + "/public/formG.htm" );
+})
+
+app.get('/formP', function (req, res) {
+  res.sendFile( __dirname + "/public/formP.htm" );
+})
+
+app.get('/clever', function (req, res) {
+  var output = clever.cleverCmd(req.query.command);
+  console.log( output );
+  res.send( output );
+})
+
+app.post('/clever', urlencodedParser, function (req, res) {
+  var output = clever.cleverCmd(req.body.command, req.body.arg);
+  console.log( output );
+  res.send( output );
+})
+
+// <<<- Start the Express App ->>>
+var server = app.listen(8081, function () {
+
+  var host = server.address().address
+  var port = server.address().port
+
+  console.log("Example app listening at http://%s:%s", host, port)
+
+})

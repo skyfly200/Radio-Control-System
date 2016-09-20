@@ -1,24 +1,21 @@
-const execFile = require('child_process').execFile;
+const child_process = require('child_process');
 
-// calls the clever script that controls winamp
-var runClever = function (args) {
-  const child = execFile("clever", args, function(error, stdout, stderr) {
-    return stdout;
+// wrapper function for the clever script
+exports.cleverCmd = function (cmd, arg)  {
+  var args = [];
+  if (arg != undefined) {
+    args = [cmd, arg];
+  }else{
+    args = [cmd];
+  }
+  child_process.execFile("clever", args, (error, stdout, stderr) => {
+    console.log(stdout);
   });
 }
 
-// wrapper function for the clever scripts commands
-exports.cleverCmd = function (cmd, arg)  {
-  if (arg != undefined) {
-    return(runClever([cmd, arg]));
-  }else{
-    return(runClever([cmd]));
-  }
-}
-
+// special volume functions
 exports.mute = function ()   { return(cleverCmd("volume", "0")); }
-volmax = function () { return(cleverCmd("volume", "255")); }
-
+exports.volmax = function () { return(cleverCmd("volume", "255")); }
 
 exports.fadeIn = function () {
   for (var i=0; i<=255; i++){ cleverCmd("volup"); }

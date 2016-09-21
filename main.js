@@ -1,8 +1,11 @@
 const clever = require('./clever');
+const pug = require('pug');
+const fs =  require("fs")
 const url = require('url');
+const bodyParser = require('body-parser');
 const express = require('express');
 var app = express();
-var bodyParser = require('body-parser');
+
 
 // Create application/x-www-form-urlencoded parser
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
@@ -10,21 +13,14 @@ var urlencodedParser = bodyParser.urlencoded({ extended: false })
 // set public directory
 app.use(express.static('public'));
 
+// Compile PUG templates
+fs.writeFile("public/form.htm", pug.renderFile("public/form.pug", {}),  function(err) {
+   if (err) { return console.error(err); }
+});
+
 // <<<- Setup Routing ->>>
 app.get('/', function (req, res) {
   res.send('Put Radio Control System Api Docs Here!');
-})
-
-app.get('/all', function (req, res) {
-  clever.cleverCmd("loadplay", "All.m3u");
-  console.log( "loadplaying All.m3u" );
-  res.send( "loadplaying All.m3u" );
-})
-
-app.get('/relay', function (req, res) {
-  clever.cleverCmd("loadplay", "whr-relay1.m3u");
-  console.log("loadplaying whr-relay1.m3u");
-  res.send( "loadplaying whr-relay1.m3u" );
 })
 
 app.get('/form', function (req, res) {
@@ -34,9 +30,7 @@ app.get('/form', function (req, res) {
 app.get('/clever', function (req, res) {
   var cmd = req.query.command;
   var arg = req.query.arg;
-  clever.cleverCmd(cmd, arg);
-  if (arg === undefined) { arg = ""; }
-  res.end("running clever " + cmd + " " + arg);
+  res.end(clever.cleverCmd(cmd, arg));
 })
 
 // <<<- Start the Express App ->>>

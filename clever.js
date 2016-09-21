@@ -8,9 +8,21 @@ exports.cleverCmd = function (cmd, arg)  {
   }else{
     args = [cmd];
   }
-  child_process.execFile("clever", args, (error, stdout, stderr) => {
-    console.log(stdout);
-  });
+  var commands = ["play","pause","playpause","stop","prev","rewind","next","forward","clear","load","loadnew","loadplay","volume","volup","voldn"];
+  var queries = ["status","getplpos","swshuffle","swrepeat","getshuffle","getrepeat","position","timeleft","songlength"];
+  if (commands.indexOf(cmd) != -1) { // run command
+    child_process.execFile("clever", args, function (error, stdout, stderr) {
+      console.log(stdout);
+    });
+    if (arg === undefined) { arg = ""; }
+    return "running clever " + cmd + " " + arg;
+  }else if (queries.indexOf(cmd) != -1) { // run querry
+    var returnObject = child_process.spawnSync("clever", args);
+    console.log(returnObject.stdout);
+    return returnObject.stdout;
+  }else { // not valid
+    return "invalid command";
+  }
 }
 
 // special volume functions

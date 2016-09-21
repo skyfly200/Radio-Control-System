@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node main",
-    "watch": "nodemon -e js -x \"node main\""
+    "watch": "nodemon -e js,pug -x \"node main\""
   },
   "author": "Skyler Fly-Wilson",
   "license": "ISC",
@@ -16,5 +16,8 @@
     "express": "^4.14.0",
     "multer": "^1.2.0",
     "sqlite3": "^3.1.4"
+  },
+  "devDependencies": {
+    "pug": "^2.0.0-beta6"
   }
 }

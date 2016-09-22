@@ -1,0 +1,31 @@
+doctype html
+html
+  body
+    h1 Add an event to the Database
+    form(action="http://127.0.0.1:8081/new-event" method="POST")
+      label Title:
+      input(type="text" name="title")
+      br
+      label Type:
+      input(type="text" name="type")
+      br
+      label Date:
+      input(type="text" name="date")
+      br
+      label Time:
+      input(type="text" name="time")
+      br
+      label Priority:
+      input(type="text" name="priority")
+      br
+      label File:
+      input(type="text" name="file")
+      br
+      label Notes:
+      textarea(name="notes")
+      br
+      input(type="submit" value="Submit")
+    form
+    button
+  body
+html

@@ -8,11 +8,16 @@ var app = express();
 const events = require('./db/events-db');
 
 // test db functions
-events.open();
-events.register('Test Show', 'show', '12/31/99', '00:00-24:00', '0', 'test.m3u', 'test');
-events.all();
-events.delete('Test Show');
-events.close();
+//events.open();
+//events.register('Test Show', 'show', '12/31/99', '00:00-24:00', '0', 'test.m3u', 'test');
+//events.deleteAll();
+//events.printAll();
+//console.log("All Events:");
+//events.all( function(events) {
+//  console.log(events);
+//});
+//events.delete('Test Show');
+//events.close();
 
 // Create application/x-www-form-urlencoded parser
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
@@ -20,46 +25,54 @@ var urlencodedParser = bodyParser.urlencoded({ extended: false })
 // set public directory
 app.use(express.static('public'));
 
-// Compile PUG templates
-fs.writeFile("public/clever-cmd.htm", pug.renderFile("public/clever-cmd.pug", {}),  function(err) {
-   if (err) { return console.error(err); }
-});
-fs.writeFile("public/add-event.htm", pug.renderFile("public/add-event.pug", {}),  function(err) {
-   if (err) { return console.error(err); }
-});
+// set PUG to be used for template
+app.set('view engine', 'pug');
 
 // <<<- Setup Routing ->>>
 // root url
 app.get('/', function (req, res) {
   res.send('Put Radio Control System Api Docs Here!');
-})
+});
 
 // <- Clever Interface ->
-// get clever command form
-app.get('/form', function (req, res) {
-  res.sendFile( __dirname + "/public/clever-cmd.htm" );
-})
+// render clever command form
+app.get('/clever-cmd', function (req, res) {
+  res.render( "clever-cmd" );
+});
 
 // get clever command
 app.get('/clever', function (req, res) {
-  var cmd = req.query.command;
-  var arg = req.query.arg;
-  res.end(clever.cleverCmd(cmd, arg));
-})
+  clever.cleverCmd(req.query.command, req.query.arg, function(result) {
+    res.end(result);
+  });
+});
 
 // <- Events Interface ->
-// get new event form
+// render new event form
 app.get('/add-event', function (req, res) {
-  res.sendFile( __dirname + "/public/add-event.htm" );
-})
+  res.render( "add-event" );
+});
 
 // process post request to add a new event
-app.post('/new-event', function (req, res) {
-  var cmd = req.query.command;
-  var arg = req.query.arg;
-  res.end(clever.cleverCmd(cmd, arg));
-})
+app.post('/new-event', urlencodedParser, function (req, res) {
+  var p = req.body; // get parameters
+  events.open();
+  events.register(p.title, p.type, p.date, p.time, p.priority, p.file, p.notes);
+  res.end('registered event');
+  events.close();
+});
 
+// return a list of json encoded events
+app.get('/events', function(req, res) {
+  events.open();
+  events.all( function(result) {
+    for (event in result) {
+      res.write(event + ': ' + result[event].title + '\n');
+    }
+    res.end();
+    events.close();
+  });
+});
 
 // <<<- Start the Express App ->>>
 var server = app.listen(8081, function () {
@@ -69,4 +82,4 @@ var server = app.listen(8081, function () {
 
   console.log("Example app listening at http://%s:%s", host, port)
 
-})
+});

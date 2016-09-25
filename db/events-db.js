@@ -33,18 +33,43 @@ exports.delete = function (title) {
 
 
 // find and return an event
-exports.find = function (title) {
+exports.find = function (title, callback) {
+  // intialize callback function if undefined
+  if (typeof callback != "function") {
+    callback = function() {}
+  }
+
   db.serialize(function() {
     // print all events
     db.each('SELECT * FROM events WHERE title = ?', title, function(err, row) { // fix with statment
-      if (err) {console.log(err);}
-      console.log(row.title + ' ' + row.type + ' ' + row.date + ' ' + row.time + ' ' + row.file);
+      if (err) {console.error(err);}
+      callback (row);
+    });
+  });
+}
+
+// return all events
+exports.all = function (callback) {
+  // intialize callback function if undefined
+  if (typeof callback != "function") {
+    callback = function() {}
+  }
+
+  db.serialize(function() {
+    // querry for all events
+    db.all('SELECT * FROM events', function(err, rows) {
+      if (err) {
+        console.error(err);
+        callback ('');
+      }else {
+        callback (rows);
+      }
     });
   });
 }
 
 // print all events (for debugging)
-exports.all = function () {
+exports.printAll = function () {
   db.serialize(function() {
     // print all events
     db.each('SELECT * FROM events', function(err, row) {

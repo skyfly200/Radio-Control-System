@@ -2,13 +2,18 @@ const child_process = require('child_process');
 const fs =  require("fs");
 
 // wrapper function for the clever script
-exports.cleverCmd = function (cmd, arg)  {
+exports.cleverCmd = function (cmd, arg, callback)  {
   // Process args to clever
   var args = [];
   if (arg != undefined) {
     args = [cmd, arg];
   }else{
     args = [cmd];
+  }
+
+  // intialize callback function if undefined
+  if (typeof callback != "function") {
+    callback = function() {}
   }
 
   // Define acceptable commands and queries
@@ -26,27 +31,23 @@ exports.cleverCmd = function (cmd, arg)  {
       // log error and return if file dosent exist
       if (err) {
         console.error('File ' + args[1] + ' not found!');
-        return false;
+        callback(false);
       }
       // run clever asyncronously and load file
-      var clever = child_process.spawn("./clever/clever.exe", args);
-      return true;
+      child_process.spawn("./clever/clever.exe", args);
+      callback(true);
     });
   }else if (commands.indexOf(cmd) != -1) { // ...run command...
     console.log("running clever " + args);
-    // run clever asyncronously, printing the exit code to the console on callback
+    // run clever asyncronously, passing result code to the callback
     var clever = child_process.spawn("./clever/clever.exe", args);
-    clever.on('exit', (code) => { console.log(clever.code); });
-    return "clever " + args;
+    clever.on('exit', (code) => { callback(clever.code); });
   }else if (queries.indexOf(cmd) != -1) { // ...run querry..
-    // run clever syncronously, priting and returning status code when complete
-    // this operation is blocking
-    var clever = child_process.spawnSync("./clever/clever.exe", args);
-    console.log(clever.status);
-    return clever.status
+    // run clever asyncronously, passiing the status code to the callback when complete
+    var clever = child_process.spawn("./clever/clever.exe", args, callback(status));
   }else { // ..or is invalid
     console.error('invalid command: ' + args);
-    return false;
+    callback(false);
   }
 }
 

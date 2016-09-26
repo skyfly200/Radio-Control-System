@@ -1,13 +1,13 @@
+const automation = require('./automation/automation');
 const clever = require('./clever/clever');
+const events = require('./db/events-db');
 const pug = require('pug');
 const fs = require('fs-extra');
 const url = require('url');
 const bodyParser = require('body-parser');
 const express = require('express');
 var formidable = require('formidable');
-var util = require('util');
 var app = express();
-const events = require('./db/events-db');
 
 
 // Create application/x-www-form-urlencoded parser

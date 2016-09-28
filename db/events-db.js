@@ -52,14 +52,20 @@ exports.find = function (names, values, callback) {
     }
   }
 
-  // build SQL query
-  var query = 'SELECT * FROM events WHERE ' + parameters;
-
   // run db commands in series
   openDB();
   db.serialize(function() {
-    // print all events
-    db.all(query, values, function(err, rows) {
+    // build prepared statement string
+    if (parameters != '') {
+      var queryString = 'SELECT * FROM events WHERE ' + parameters;
+    } else {
+      var queryString = 'SELECT * FROM events';
+    }
+    // create prepared statement
+    var query = db.prepare(queryString);
+
+    // get all matching events
+    query.all(query, values, function(err, rows) {
       if (err) {
         console.error(err);
         callback (false);
@@ -67,6 +73,7 @@ exports.find = function (names, values, callback) {
         callback (rows);
       }
     });
+    query.finalize();
     db.close();
   });
 }
@@ -131,18 +138,15 @@ exports.update = function (names, values, updateNames, newValues, callback) {
     }
   }
 
-  // build SQL update and query staments
-  // (CHANGE TO USING PREPARED STATEMENTS!!!!!!)
-  var update = 'UPDATE events SET ' + setParams + ' WHERE ' + parameters;
-  console.log(update);
-
   var updateValues = newValues.concat(values);
 
   // run db commands in series
   openDB();
   db.serialize(function() {
+    // build SQL prepared statement for update
+    var update = db.prepare('UPDATE events SET ' + setParams + ' WHERE ' + parameters);
     // update all matching
-    db.all(update, updateValues, function(err, rows) {
+    update.all(update, updateValues, function(err, rows) {
       if (err) {
         console.error(err);
         callback (false);
@@ -150,6 +154,7 @@ exports.update = function (names, values, updateNames, newValues, callback) {
         callback (true);
       }
     });
+    update.finalize();
     db.close();
   });
 }
@@ -179,18 +184,17 @@ exports.delete = function (names, values, callback) {
     }
   }
 
-  // build SQL query
-  var query = 'DELETE FROM events';
-  if (parameters != '') {
-    query += ' WHERE ' + parameters;
-  }
-  console.log(query);
-
   // run db commands in series
   openDB();
   db.serialize(function() {
-    // delete all events
-    db.run(query, values, function(err) {
+    // build SQL prepared statement
+    if (parameters != '') {
+      var query = db.prepare('DELETE FROM events WHERE ' + parameters);
+    } else {
+      var query = db.prepare('DELETE FROM events');
+    }
+    // delete all matching events
+    query.run(query, values, function(err) {
       if (err === null) {
         callback (true);
       }else {
@@ -198,6 +202,7 @@ exports.delete = function (names, values, callback) {
         callback (false);
       }
     });
+    query.finalize();
     db.close();
   });
 }
@@ -214,16 +219,6 @@ exports.printAll = function () {
       if (row.notes != '') { console.log('Notes: ' + row.notes) } // print any notes on separate line
       if (row.notes != '') { console.log('History: ' + row.history) } // print any notes on separate line
     });
-    db.close();
-  });
-}
-
-// delete all events  BE CAREFUL! this function DELETEs all events!!!
-exports.deleteAll = function (title) {
-  openDB();
-  db.serialize(function() {
-    // delete all events
-    db.run('DELETE FROM events');
     db.close();
   });
 }

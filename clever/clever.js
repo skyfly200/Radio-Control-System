@@ -13,7 +13,7 @@ exports.cleverCmd = function (cmd, arg, callback)  {
 
   // intialize callback function if undefined
   if (typeof callback != "function") {
-    callback = function() {}
+    callback = function(out1, out2) {};
   }
 
   // Define acceptable commands and queries
@@ -31,23 +31,25 @@ exports.cleverCmd = function (cmd, arg, callback)  {
       // log error and return if file dosent exist
       if (err) {
         console.error('File ' + args[1] + ' not found!');
-        callback(false);
+        callback('false');
       }
       // run clever asyncronously and load file
       child_process.spawn("./clever/clever.exe", args);
-      callback(true);
+      callback('true');
     });
   }else if (commands.indexOf(cmd) != -1) { // ...run command...
-    console.log("running clever " + args);
     // run clever asyncronously, passing result code to the callback
-    var clever = child_process.spawn("./clever/clever.exe", args);
-    clever.on('exit', (code) => { callback(clever.code); });
+    var child = child_process.spawn("./clever/clever.exe", args);
+    child.stderr.on('data', (data) => { callback('false'); });
+    child.on('exit', (code) => { callback('true'); });
   }else if (queries.indexOf(cmd) != -1) { // ...run querry..
     // run clever asyncronously, passiing the status code to the callback when complete
-    var clever = child_process.spawn("./clever/clever.exe", args, callback(status));
+    var child = child_process.spawn("./clever/clever.exe", args);
+    child.stderr.on('data', (data) => { callback(data); });
+    child.stdout.on('data', (data) => { callback(data); });
   }else { // ..or is invalid
     console.error('invalid command: ' + args);
-    callback(false);
+    callback('false');
   }
 }
 

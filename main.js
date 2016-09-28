@@ -1,14 +1,18 @@
-const automation = require('./automation/automation');
-const clever = require('./clever/clever');
-const events = require('./db/events-db');
-const pug = require('pug');
-const fs = require('fs-extra');
-const url = require('url');
-const bodyParser = require('body-parser');
-const express = require('express');
-var formidable = require('formidable');
-var app = express();
+// Radio Control System Server
+// Contains:
+// automation process for running events
+// a REST API for controling the radio and automation process remotely
 
+const clever = require('./clever/clever'); // clever script wrapper functions
+const events = require('./db/events-db'); // events db functions
+const auto = require('./automation/automation'); // event automation library
+const pug = require('pug'); // templating engine
+const fs = require('fs-extra'); // more advanced fs functions (using copy)
+const url = require('url');
+const bodyParser = require('body-parser'); // processes POST parameters
+const express = require('express'); // express framework for managing API URI request and response
+var formidable = require('formidable'); // file upload
+var app = express();
 
 // Create application/x-www-form-urlencoded parser
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
@@ -16,8 +20,17 @@ var urlencodedParser = bodyParser.urlencoded({ extended: false })
 // set public directory
 app.use(express.static('public'));
 
-// set PUG to be used for template
+// set PUG to be used for template rendering
 app.set('view engine', 'pug');
+
+// load events and run automation every 60 seconds
+auto.load('day', function () {
+  auto.run();
+  setInterval(auto.run, 60000);
+});
+
+// reload automation events from DB every hour
+setInterval( function () { auto.load('day') }, 3600000);
 
 // <<<- Setup Routing ->>>
 // root url
@@ -66,7 +79,7 @@ app.get('/clever-cmd', function (req, res) {
 // get clever command
 app.get('/clever', function (req, res) {
   clever.cleverCmd(req.query.command, req.query.arg, function(result) {
-    res.end(JSON.stringify(result));
+    res.end(result);
   });
 });
 
@@ -79,19 +92,16 @@ app.get('/add-event', function (req, res) {
 // process post request to add a new event
 app.post('/post-event', urlencodedParser, function (req, res) {
   var p = req.body; // get POST parameters
-  events.open();
-  events.register(p.title, p.type, p.date, p.time, p.priority, p.file, p.notes);
+  events.register(p.title, p.type, p.schedule, p.priority, p.file, p.notes, p.expire);
+  auto.load('day');
   res.end('registered event');
-  events.close();
 });
 
 
 // respond with a json encoded list of all events
 app.get('/get-events', function(req, res) {
-  events.open();
   events.all( function(result) {
     res.end(JSON.stringify(result));
-    events.close();
   });
 });
 
@@ -103,8 +113,8 @@ app.get('/get-event', function(req, res) {
 
   var p = req.query; // set p to GET parameters
   // arrays of all posible parameters and their set values
-  var paramNames = ['title', 'type', 'date', 'time', 'priority', 'file', 'notes'];
-  var params = [p.title, p.type, p.date, p.time, p.priority, p.file, p.notes];
+  var paramNames = ['title', 'type', 'schedule', 'priority', 'file', 'notes', 'create', 'expire'];
+  var params = [p.title, p.type, p.schedule, p.priority, p.file, p.notes, p.create, p.expire];
 
   // determine what parameters are defined and append them to matching arrays
   for (p in params) {
@@ -115,11 +125,9 @@ app.get('/get-event', function(req, res) {
   }
 
   // open the db and execute the querry on the database
-  events.open();
   events.find(names, values, function(result) {
     // return the results as json and close the db
     res.end(JSON.stringify(result));
-    events.close();
   });
 });
 
@@ -134,9 +142,10 @@ app.post('/update-event', urlencodedParser, function(req, res) {
 
   var p = req.body; // set p to POST parameters
   // arrays of all parameter names and values set for them
-  var paramNames = ['title', 'type', 'date', 'time', 'priority', 'file'];
-  var params = [p.title, p.type, p.date, p.time, p.priority, p.file];
-  var newParams = [p.title_u, p.type_u, p.date_u, p.time_u, p.priority_u, p.file_u];
+  var paramNames = ['id', 'title', 'type', 'schedule', 'priority', 'file', 'notes', 'create', 'expire'];
+  var params = [p.id, p.title, p.type, p.schedule, p.priority, p.file, p.notes, p.create, p.expire];
+  var updateParamNames = ['title', 'type', 'schedule', 'priority', 'file', 'notes', 'expire', 'history'];
+  var updateParams = [p.title_u, p.type_u, p.schedule_u, p.priority_u, p.file_u, p.notes_u, p.expire_u, p.history_u];
 
   // determine what parameters are defined and append them to matching arrays
   for (p in params) {
@@ -146,21 +155,22 @@ app.post('/update-event', urlencodedParser, function(req, res) {
     }
   }
   // determine what update parameters are defined and append them to update arrays
-  for (p in newParams) {
-    if (newParams[p] != undefined) {
-      updateNames.push(paramNames[p]);
-      updateValues.push(newParams[p]);
+  for (p in updateParams) {
+    if (updateParams[p] != undefined) {
+      updateNames.push(updateParamNames[p]);
+      updateValues.push(updateParams[p]);
     }
   }
 
   // open the db and execute the querry on the database
-  events.open();
   events.update(names, values, updateNames, updateValues, function(result) {
     // return result of delete and close db
     var output = JSON.stringify(result);
-    if (output != '' || output != undefined ) { res.end(output); }
+    if (output != '' || output != undefined ) {
+      auto.load('day');
+      res.end(output);
+    }
     else { res.end(false); }
-    events.close();
   });
 });
 
@@ -173,8 +183,8 @@ app.post('/delete-event', urlencodedParser, function(req, res) {
 
   var p = req.body; // set p to POST parameters
   // arrays of all parameter names and values set for them
-  var paramNames = ['title', 'type', 'date', 'time', 'priority', 'file'];
-  var params = [p.title, p.type, p.date, p.time, p.priority, p.file];
+  var paramNames = ['id', 'title', 'type', 'schedule', 'priority', 'file', 'notes', 'create', 'expire'];
+  var params = [p.id, p.title, p.type, p.schedule, p.priority, p.file, p.notes, p.create, p.expire];
 
   // determine what parameters are defined and append them to matching arrays
   for (p in params) {
@@ -185,13 +195,14 @@ app.post('/delete-event', urlencodedParser, function(req, res) {
   }
 
   // open the db and execute the querry on the database
-  events.open();
   events.delete(names, values, function(result) {
     // return result of delete and close db
     var output = JSON.stringify(result);
-    if (output != '' || output != undefined ) { res.end(output); }
+    if (output != '' || output != undefined ) {
+      auto.load('day');
+      res.end(output);
+    }
     else { res.end(false); }
-    events.close();
   });
 });
 

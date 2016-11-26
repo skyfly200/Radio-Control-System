@@ -93,7 +93,7 @@ function run() {
 // execute an event
 function exeEvent(event) {
   if (event.file != undefined) {
-    // determin type of event and execute acordingly
+    // determine type of event and execute acordingly
     switch(event.type) {
       case 'show':
         console.log('Executing Event: ' + event.title + ' / ' + event.type);
@@ -115,11 +115,12 @@ function exeEvent(event) {
           // when track ends, play drops playlist
           trackEnd( () => {clever.cleverCmd('play', event.file, function(result) {
             if (result) {
-              // build the drops playlist
+              // build the drops playlist, with one random drop from each drop event
               clever.cleverCmd('loadnew', 'Empty.m3u', function(result) {
                 dropList.forEach( function (item, index) {
-                  // find all mp3 drop files from specified sub folder
+                  // find all mp3 drop files from specified sub folders
                   var subFolder = item.file;
+                  console.log(subFolder);
                   fromDir(('content/' + subFolder),'mp3', (files) => {
                     var dropPath = 'content/' + subFolder + '/' + files[getRandomInt(0, files.length)]; // select a random file
                   })
@@ -219,7 +220,7 @@ function fromDir(startPath,filter,callback){
     }
 
     var matchingFiles = [];
-    var files=fs.readdirSync(startPath);
+    var files = fs.readdirSync(startPath);
     for(var i=0;i<files.length;i++){
         var filename=path.join(startPath,files[i]);
         var stat = fs.lstatSync(filename);

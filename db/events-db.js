@@ -104,7 +104,7 @@ exports.all = function (callback) {
 // names = array of parameter names to match
 // values = array of values to mach, in order with corisponding names array
 // callback = function to pass modified events
-exports.update = function (names, values, updateNames, newValues, callback) {
+exports.update = function (names, values, updateNames, updateValues, callback) {
   // intialize callback function if undefined
   if (typeof callback != "function") {
     callback = function(events) {}
@@ -126,10 +126,10 @@ exports.update = function (names, values, updateNames, newValues, callback) {
 
   // build the SET parameters string based on available parameters
   var setParams = '';
-  for (n in newValues) {
+  for (n in updateValues) {
     if (global.validMatchParams.indexOf(updateNames[n]) != -1) {
       setParams += ( updateNames[n] + "=?");
-      if ( n < (newValues.length - 1) ) { setParams += ', '; }
+      if ( n < (updateValues.length - 1) ) { setParams += ', '; }
     }
     else{
       console.error('Invalid Parameter Name: ' + updateNames[n]);
@@ -138,7 +138,7 @@ exports.update = function (names, values, updateNames, newValues, callback) {
     }
   }
 
-  var updateValues = newValues.concat(values);
+  var newValues = updateValues.concat(values);
 
   // run db commands in series
   openDB();
@@ -146,7 +146,7 @@ exports.update = function (names, values, updateNames, newValues, callback) {
     // build SQL prepared statement for update
     var update = db.prepare('UPDATE events SET ' + setParams + ' WHERE ' + parameters);
     // update all matching
-    update.all(update, updateValues, function(err, rows) {
+    update.all(newValues, function(err, rows) {
       if (err) {
         console.error(err);
         callback (false);
@@ -174,7 +174,7 @@ exports.delete = function (names, values, callback) {
   var parameters = '';
   for (n in values) {
     if (global.validMatchParams.indexOf(names[n]) != -1) {
-      parameters += ( names[n] + "=?");
+      parameters += ( names[n] + " = ? ");
       if ( n < (values.length - 1) ) { parameters += ' AND '; }
     }
     else{
@@ -193,8 +193,9 @@ exports.delete = function (names, values, callback) {
     } else {
       var query = db.prepare('DELETE FROM events');
     }
+
     // delete all matching events
-    query.run(query, values, function(err) {
+    query.run(values, function(err) {
       if (err === null) {
         callback (true);
       }else {

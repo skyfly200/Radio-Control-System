@@ -154,6 +154,7 @@ app.post('/update-event', urlencodedParser, function(req, res) {
       values.push(params[p]);
     }
   }
+
   // determine what update parameters are defined and append them to update arrays
   for (p in updateParams) {
     if (updateParams[p] != undefined) {
@@ -166,6 +167,7 @@ app.post('/update-event', urlencodedParser, function(req, res) {
   events.update(names, values, updateNames, updateValues, function(result) {
     // return result of delete and close db
     var output = JSON.stringify(result);
+    res.end(output);
     if (output != '' || output != undefined ) {
       auto.load('day');
       res.end(output);

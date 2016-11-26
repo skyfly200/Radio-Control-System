@@ -1,0 +1,12 @@
+API URIs:
+upload - upload a file to the server
+clever - direct winamp control, via clever.exe
+post-event - add a new event to the SQLite database
+get-event - query for a specific event
+get-events - JSON list of all event objects
+update-event - change an events atributes
+delete-event - delete an event
+
+Form URLs:
+clever-cmd - form to execute clever commands
+add-event - form to add events to the database

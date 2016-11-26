@@ -1,0 +1,1 @@
+"not a dirrectory, scandir" bug building drops playlist

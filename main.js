@@ -35,7 +35,7 @@ setInterval( function () { auto.load('day') }, 3600000);
 // <<<- Setup Routing ->>>
 // root url
 app.get('/', function (req, res) {
-  res.send('Put Radio Control System Api Docs Here!');
+  res.render( "root" );
 });
 
 // <- File Upload ->

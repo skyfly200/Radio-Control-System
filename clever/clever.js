@@ -25,7 +25,7 @@ exports.cleverCmd = function (cmd, arg, callback)  {
   if (loaders.indexOf(cmd) != -1) { // ...run loader...
     console.log("running clever " + args[0], args[1]);
     // modify path arg relative to contents folder
-    args[1] = "./content/" + args[1];
+    //args[1] = "./content/" + args[1];
     // check file exists and has read permisions
     fs.access(args[1], fs.F_OK, (err) => {
       // log error and return if file dosent exist
@@ -33,9 +33,11 @@ exports.cleverCmd = function (cmd, arg, callback)  {
         console.error('File ' + args[1] + ' not found!');
         callback('false');
       }
-      // run clever asyncronously and load file
-      child_process.spawn("./clever/clever.exe", args);
-      callback('true');
+      else {
+        // run clever asyncronously and load file
+        child_process.spawn("./clever/clever.exe", args);
+        callback('true');
+      }
     });
   }else if (commands.indexOf(cmd) != -1) { // ...run command...
     // run clever asyncronously, passing result code to the callback

@@ -99,7 +99,7 @@ function exeEvent(event) {
         console.log('Executing Event: ' + event.title + ' / ' + event.type);
         if (waitTimer != null) { clearTimeout(waitTimer); }
         // load event file with clever
-        clever.cleverCmd('loadplay', event.file, function(result) {
+        clever.cleverCmd('loadplay', ("./content/" + event.file), function(result) {
           if (result) {
             console.log('Event Ran Succesfully');
             lastEvent = event;
@@ -112,27 +112,29 @@ function exeEvent(event) {
         // only execute if no event timer is running
         if (waitTimer === null) {
           console.log('Executing Event: ' + event.title + ' / ' + event.type);
-          // when track ends, play drops playlist
-          trackEnd( () => {clever.cleverCmd('play', event.file, function(result) {
+          var dropPaths = [];
+          // que the drops playlist paths, with one random drop from each drop event
+          dropList.forEach( function (item, index) {
+            // find all mp3 drop files from specified sub folders
+            var subFolder = item.file;
+            fromDir(("./content/" + subFolder),'mp3', (files) => {
+              // select a random file and add it to paths list
+              dropPaths[index] = files[getRandomInt(0, files.length)];
+            })
+          });
+          // when track ends, load the empty playlist and fill it with drops
+          trackEnd( () => {clever.cleverCmd('loadplay', dropPaths[0], function(result) {
             if (result) {
-              // build the drops playlist, with one random drop from each drop event
-              clever.cleverCmd('loadnew', 'Empty.m3u', function(result) {
-                dropList.forEach( function (item, index) {
-                  // find all mp3 drop files from specified sub folders
-                  var subFolder = item.file;
-                  console.log(subFolder);
-                  fromDir(('content/' + subFolder),'mp3', (files) => {
-                    var dropPath = 'content/' + subFolder + '/' + files[getRandomInt(0, files.length)]; // select a random file
-                  })
-                  // add file to playlist
-                  clever.cleverCmd('load', dropPath);
-                  // play after adding first drop
-                  if (index === 0) { clever.cleverCmd('play'); }
-                });
+              // shift the first drop off the list, since its already playing
+              dropPaths.shift()
+              // build the drops playlist paths, with one random drop from each drop event
+              dropPaths.forEach( function (item, index) {
+                // add remaining files to the playlist
+                clever.cleverCmd('load', dropPaths[index + 1]);
               });
               // when drops playlist ends
-              listEnd(dropList.length, () => {
-                // call run agian, to load another event
+              listEnd((dropList.length + 1), () => {
+                // call run agian, to load next event
                 waitTimer = null;
                 console.log('Event Ran Succesfully');
                 run();
@@ -149,7 +151,7 @@ function exeEvent(event) {
         if (waitTimer === null) {
           console.log('Executing Event: ' + event.title + ' / ' + event.type);
           // when track ends, load event file with clever
-          clever.cleverCmd('loadplay', event.file, function(result) {
+          clever.cleverCmd('loadplay', ("./content/" + event.file), function(result) {
             waitTimer = null;
             if (result) {
               console.log('Event Ran Succesfully');
@@ -188,7 +190,7 @@ function trackEnd(callback) {
     var timeParts = String(result).split(':');
     var timeMod = -1;
     var seconds = parseInt(timeParts[0] * 60) + parseInt(timeParts[1]) + timeMod;
-    console.log('Waiting ' + seconds + ' seconds for track end')
+    console.log('Waiting ' + seconds + ' seconds for track to end')
     waitTimer = setTimeout(callback, (seconds * 1000));
   });
 }
